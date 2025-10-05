@@ -77,14 +77,14 @@ class Pendata():
             else:
                 self.data_dict['body mass'].append(int(separated[6]))
     
-    ## Calculation 1: 
+    ## Calculation 1: Bill stats by species
     def data_species(self):
         """
         Groups the data by species.
         Returns a dictionary with the grouped data.
         """
 
-        species_group = defaultdict(lambda: {'bill lengths': [], 'bill depth': []})
+        species_group = defaultdict(lambda: {'bill length': [], 'bill depth': []})
         for i in range(len(self.data_dict['species'])):
             cur_species = self.data_dict['species'][i]
             cur_length = self.data_dict['bill length'][i]
@@ -107,12 +107,12 @@ class Pendata():
         final_results = []
         for species, data in groups.items():
             if len(data['bill length']) > 0:
-                ave_length = sum(data['bill length']) / len(data('bill length'))
+                ave_length = sum(data['bill length']) / len(data['bill length'])
             else: 
                 ave_length = 0
 
             if len(data['bill depth']) > 0:
-                ave_depth = sum(data['bill depth']) / len(data('bill depth'))
+                ave_depth = sum(data['bill depth']) / len(data['bill depth'])
             else: 
                 ave_depth = 0
 
@@ -138,12 +138,12 @@ class Pendata():
             mass = self.data_dict['body mass'][i]
             flipper = self.data_dict['flipper length'][i]
 
-        if mass is not None and flipper is not None: 
-            mass_kg = mass / 1000
-            flipper_m = flipper / 1000
-            cur_score = mass_kg / (flipper_m * flipper_m)
+            if mass is not None and flipper is not None: 
+                mass_kg = mass / 1000
+                flipper_m = flipper / 1000
+                cur_score = mass_kg / (flipper_m * flipper_m)
 
-            scores.append({'id': id, 'score': cur_score})
+                scores.append({'id': id, 'score': cur_score})
         
         return scores
     
@@ -155,8 +155,8 @@ class Pendata():
         if not score_list: 
             return {'id': -1, 'score': -1}
        
-        list = sorted(score_list, key=lambda penguin: penguin['score'], reverse=True)
-        champion = sorted
+        ranked = sorted(score_list, key=lambda penguin: penguin['score'], reverse=True)
+        return ranked[0]
     
     def find_winner(self):
         """
@@ -168,24 +168,54 @@ class Pendata():
         if winner['id'] == -1:
             return {"error": "No valid penguins found"}
         
+        champion_id = winner['id']
+        winner_index = self.data_dict['num'].index(champion_id)
 
+        details = {
+            'penguin id': champion_id,
+            'BMI score': round(winner['score'], 3), 
+            'species': self.data_dict['species'][winner_index], 
+            'island': self.data_dict['island'][winner_index],
+            'bill_length_mm': self.data_dict['bill length'][winner_index],
+            'bill_depth_mm': self.data_dict['bill depth'][winner_index],
+            'flipper_length_mm': self.data_dict['flipper length'][winner_index],
+            'body_mass_g': self.data_dict['body mass'][winner_index],
+            'sex': self.data_dict['sex'][winner_index]
+        }
 
+        return details
+        
 
-
-
-    
-    
-
-
-
-
- 
 
 
 class Testpenguins(unittest.TestCase):
+    """
+    class for testing
+    """
+    def setUp(self):
+        
 
 
-    def main():
+    
+    
+
+
+
+def main():
+    p = Pendata("penguins.csv")
+    p.build_data_dict()
+
+
+
+
+
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)
+
+    main()
+
 
 
 
