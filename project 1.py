@@ -158,6 +158,7 @@ class Pendata():
         ranked = sorted(score_list, key=lambda penguin: penguin['score'], reverse=True)
         return ranked[0]
     
+    
     def find_winner(self):
         """
         find all information about the winner.
@@ -186,6 +187,15 @@ class Pendata():
         return details
         
 
+def write_bill_csv(rows, filename):
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    headers = ['species', 'mean bill length(mm)', 'mean bill depth(mm)']
+    
+
+
+
+
+def winner_txt(info, filename):
 
 
 class Testpenguins(unittest.TestCase):
@@ -193,6 +203,13 @@ class Testpenguins(unittest.TestCase):
     class for testing
     """
     def setUp(self):
+        self.penguin = Pendata("penguins.csv")
+        self.penguin.build_data_dict()
+
+
+    def test_build_data_dict(self):
+
+
         
 
 
@@ -202,11 +219,15 @@ class Testpenguins(unittest.TestCase):
 
 
 def main():
-    p = Pendata("penguins.csv")
-    p.build_data_dict()
+    penguin = Pendata("penguins.csv")
+    penguin.build_data_dict()
 
+    groups = penguin.data_species()
+    rows = penguin.ave_species_group(groups)
+    write_bill_csv(rows, 'output/penguins_bill_stats.csv')
 
-
+    winner_inf = penguin.find_winner()
+    winner_txt(winner_inf, 'output/winner.txt')
 
 
 
