@@ -1,6 +1,17 @@
 # name Sihan Chen
 # student id: 2563 8460
 # email: hnachen@umich.edu
+# Work with: My self. Ask ChatGPT some questions when read file in main(). 
+
+"""
+name of dataset: penguins.csv
+column I used: species, bill length, bill depth, num, flipper length, body mass
+Calculation 1: Group by species and compute the average bill length and bill depth
+                (mm) to produce a CSV tabl.
+Calculation 2: Compute BMI for each penguin then pick the top scorer and print its details.
+
+
+"""
 
 import os
 import csv
@@ -190,12 +201,22 @@ class Pendata():
 def write_bill_csv(rows, filename):
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     headers = ['species', 'mean bill length(mm)', 'mean bill depth(mm)']
-    
+    with open(filename, 'w', newline ='') as f:
+        writer = csv.DictWriter(f, fieldnames=headers)
+        writer.writeheader()
+        writer.writerows(rows)
+    print(f"Successfully created CSV file: {filename}")
 
 
 
 
 def winner_txt(info, filename):
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    with open(filename, 'w') as f:
+        for key, value in info.items():
+            f.write(f"{key}: {value}\n")
+    print(f"Successfully created TXT file: {filename}")
+
 
 
 class Testpenguins(unittest.TestCase):
