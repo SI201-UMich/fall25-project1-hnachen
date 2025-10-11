@@ -59,9 +59,10 @@ class Pendata():
                 continue
 
 
-            self.data_dict['num'].append(int(separated[0].strip('"')))
-            self.data_dict['species'].append(separated[1])
-            self.data_dict['island'].append(separated[2])
+            self.data_dict['num'].append(int(separated[0].strip(' "')))
+            self.data_dict['species'].append(separated[1].strip(' "'))
+            self.data_dict['island'].append(separated[2].strip(' "'))
+            self.data_dict['year'].append(int(separated[8].strip(' "')))
 
             if separated[7] == 'NA':
                 self.data_dict['sex'].append(None)
@@ -87,6 +88,8 @@ class Pendata():
                 self.data_dict['body mass'].append(None)
             else:
                 self.data_dict['body mass'].append(int(separated[6]))
+
+            
     
     ## Calculation 1: Bill stats by species
     def data_species(self):
@@ -226,15 +229,52 @@ class Testpenguins(unittest.TestCase):
     def setUp(self):
         self.penguin = Pendata("penguins.csv")
         self.penguin.build_data_dict()
+       
 
 
     def test_build_data_dict(self):
+        d = self.penguin.data_dict
+        self.assertIsInstance(d, dict) 
+        self.assertIsInstance(d['species'], list) # check row is list
+        self.assertEqual(len(d['species']), 344) #num of column = 344
+        ## row 4 has five NA
+        self.assertTrue(
+            d['bill length'][d['num'].index(4)] is None and
+            d['bill depth'][d['num'].index(4)]  is None and
+            d['flipper length'][d['num'].index(4)] is None and
+            d['body mass'][d['num'].index(4)]  is None and
+            d['sex'][d['num'].index(4)] is None
+        )
+        # check the last row
+        self.assertTrue(d['species'][d['num'].index(344)] == 'Chinstrap')
+        self.assertTrue(d['bill length'][d['num'].index(344)]  == 50.2)
+        self.assertTrue(d['year'][d['num'].index(344)]    == 2009)
 
 
         
 
+    def test_data_species(self):
+        d = self.penguin.data_dict
+        g = self.penguin.data_species()
+       
+        
+
+        
+
+
+
 
     
+    
+
+
+
+
+
+
+
+
+
     
 
 
