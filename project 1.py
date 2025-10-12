@@ -256,11 +256,82 @@ class Testpenguins(unittest.TestCase):
     def test_data_species(self):
         d = self.penguin.data_dict
         g = self.penguin.data_species()
-       
+
+        ## check in this species, where has a record with paried bill length and depth match the table
+        self.assertIn((50.4, 15.3), list(zip(g['Gentoo']['bill length'], g['Gentoo']['bill depth'])))
+        self.assertIn((38.6, 21.2), list(zip(g['Adelie']['bill length'], g['Adelie']['bill depth'])))
+
+
+        # no NA in species group
+        self.assertTrue(all(x is not None for x in g['Adelie']['bill length']) 
+                        and all(x is not None for x in g['Adelie']['bill depth']))   
+        # species : out of list
+        self.assertTrue('Emperor' not in g)
+    
+
+    def test_ave_species_group(self):
+        g = self.penguin.data_species()
+        rows = self.penguin.ave_species_group(g)
+        # there are 3 species, with 3 rows
+        self.assertEqual(len(rows), 3)
+
+        # round to 3 three decimal places
+        self.assertEqual(next(r for r in rows if r['species']=='Adelie')['mean bill length(mm)'], 
+                         round(sum(g['Adelie']['bill length'])/len(g['Adelie']['bill length']), 3))  
+        # if 2 penguin with [48.1, 19.2], [32.3, 18], calculate the mean
+        self.assertEqual(self.penguin.ave_species_group({'X': {'bill length':[48.1, 32.3], 'bill depth':[19.2, 18]}})[0], 
+                         {'species':'X','mean bill length(mm)':40.2,'mean bill depth(mm)':18.6})  
+        # if 3 penguin with [37.7, 17.3], [35, 18], calculate the mean
+        self.assertEqual(self.penguin.ave_species_group({'X': {'bill length':[37.7, 35], 'bill depth':[17.3, 18]}})[0], 
+                         {'species':'X','mean bill length(mm)':36.35,'mean bill depth(mm)':17.65})  
         
 
+        # if one penguin without Bill length
+        self.assertEqual(self.penguin.ave_species_group({'Z': {'bill length':[], 'bill depth':[4.0, 6.0]}})[0], 
+                         {'species':'Z','mean bill length(mm)':0,'mean bill depth(mm)':5.0})
+         # empty grous with empty list
+        self.assertEqual(self.penguin.ave_species_group({}), [])  
+
+
+    def test_cal_BMI(self):
+        d = self.penguin.data_dict
+        scores = self.penguin.cal_BMI()
+        scores_by_id = {s['id']: s['score'] for s in scores}
+
+        #there is result BMI is positive
+        self.assertTrue(len(scores) > 0)
+        self.assertTrue(all(s['score'] > 0 for s in scores))
+        # scores are same
+        self.assertAlmostEqual(scores[0]['score'],
+            (d['body mass'][d['num'].index(scores[0]['id'])]/1000) / ((d['flipper length'][d['num'].index(scores[0]['id'])]/1000)**2),
+            places=9)
         
 
+        # num = 38
+        i = d['num'].index(38)
+        expected_38 = (d['body mass'][i] / 1000) / ((d['flipper length'][i] / 1000) ** 2)
+        self.assertAlmostEqual(scores_by_id[38], expected_38, places=9)
+
+        # 337
+        j = d['num'].index(337)
+        expected_337 = (d['body mass'][j] / 1000) / ((d['flipper length'][j] / 1000) ** 2)
+        self.assertAlmostEqual(scores_by_id[337], expected_337, places=9)   
+
+        # num = 272 all NA
+        self.assertTrue(d['body mass'][d['num'].index(272)] is None and d['flipper length'][d['num'].index(272)] is None)
+        # ID not in BMI list
+        self.assertNotIn(388, scores_by_id)
+
+
+
+
+
+
+
+
+
+
+    
 
 
 
