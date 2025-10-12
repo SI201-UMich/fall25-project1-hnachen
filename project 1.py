@@ -214,11 +214,42 @@ def write_bill_csv(rows, filename):
 
 
 def winner_txt(info, filename):
+    # minimal English, aligned columns
     os.makedirs(os.path.dirname(filename), exist_ok=True)
-    with open(filename, 'w') as f:
-        for key, value in info.items():
-            f.write(f"{key}: {value}\n")
+
+    def val(k):
+        v = info.get(k)
+        return "NA" if v is None else v
+
+    def fmt_num(x, nd=None, unit=""):
+        if x is None:
+            return "NA"
+        if isinstance(x, (int, float)) and nd is not None:
+            return f"{x:.{nd}f}{unit}"
+        return f"{x}{unit}"
+
+    lines = []
+    lines.append("Information about the highest-BMI penguin")
+    lines.append("")
+
+    # left labels aligned to width 20
+    w = 20
+    lines.append(f"{'penguin id:'.ljust(w)}{val('penguin id')}")
+    lines.append(f"{'BMI (kg/m^2):'.ljust(w)}{fmt_num(info.get('BMI score'), 3)}")
+    lines.append(f"{'species:'.ljust(w)}{val('species')}")
+    lines.append(f"{'island:'.ljust(w)}{val('island')}")
+    lines.append(f"{'year:'.ljust(w)}{val('year')}")
+    lines.append(f"{'bill_length_mm:'.ljust(w)}{fmt_num(info.get('bill_length_mm'), 1)}")
+    lines.append(f"{'bill_depth_mm:'.ljust(w)}{fmt_num(info.get('bill_depth_mm'), 1)}")
+    lines.append(f"{'flipper_length_mm:'.ljust(w)}{fmt_num(info.get('flipper_length_mm'), 0)}")
+    lines.append(f"{'body_mass_g:'.ljust(w)}{fmt_num(info.get('body_mass_g'), 0)}")
+    lines.append(f"{'sex:'.ljust(w)}{val('sex')}")
+
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
     print(f"Successfully created TXT file: {filename}")
+
+
 
 
 
@@ -323,20 +354,34 @@ class Testpenguins(unittest.TestCase):
         self.assertNotIn(388, scores_by_id)
 
 
-
-
-
-
-
-
-
-
     
-
-
-
+    def test_winner(self):
     
-    
+        # check the list 
+        self.assertEqual(self.penguin.winner([{'id':1,'score':33.2},{'id':2,'score':31.2},{'id':3,'score':30}]), {'id':1,'score':33.2})
+        self.assertEqual(self.penguin.winner([{'id':1,'score':45},{'id':2,'score':43.2},{'id':3,'score':41}]), {'id':1,'score':45})
+        # check the ranking whether correct
+        self.assertEqual(self.penguin.winner(self.penguin.cal_BMI()), max(self.penguin.cal_BMI(), key=lambda s: s['score']))
+
+        # empty list should return the sentinel
+        self.assertEqual(self.penguin.winner([]), {'id':-1,'score':-1})
+
+        # when scores tie, keep the first occurrence (Python's sorted is stable)
+        self.assertEqual(self.penguin.winner([{'id':10,'score':7.7},{'id':11,'score':7.7}])['id'], 10)
+
+
+    def test_find_winner(self):
+        details = self.penguin.find_winner()
+        top = max(self.penguin.cal_BMI(), key=lambda s: s['score'])
+
+        # winner id equals argmax
+        self.assertEqual(details['penguin id'], top['id'])
+        # BMI score equals rounded top score to 3 decimals
+        self.assertEqual(details['BMI score'], round(top['score'], 3))
+
+
+
+
 
 
 
@@ -365,7 +410,7 @@ def main():
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2)
+    unittest.main(verbosity=2, exit=False)
 
     main()
 
