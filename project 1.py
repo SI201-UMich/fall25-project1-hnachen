@@ -191,6 +191,7 @@ class Pendata():
             'BMI score': round(winner['score'], 3), 
             'species': self.data_dict['species'][winner_index], 
             'island': self.data_dict['island'][winner_index],
+            'year': self.data_dict['year'][winner_index],   
             'bill_length_mm': self.data_dict['bill length'][winner_index],
             'bill_depth_mm': self.data_dict['bill depth'][winner_index],
             'flipper_length_mm': self.data_dict['flipper length'][winner_index],
@@ -202,7 +203,6 @@ class Pendata():
         
 
 def write_bill_csv(rows, filename):
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
     headers = ['species', 'mean bill length(mm)', 'mean bill depth(mm)']
     with open(filename, 'w', newline ='') as f:
         writer = csv.DictWriter(f, fieldnames=headers)
@@ -215,7 +215,6 @@ def write_bill_csv(rows, filename):
 
 def winner_txt(info, filename):
     # minimal English, aligned columns
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
 
     def val(k):
         v = info.get(k)
@@ -374,22 +373,98 @@ class Testpenguins(unittest.TestCase):
         details = self.penguin.find_winner()
         top = max(self.penguin.cal_BMI(), key=lambda s: s['score'])
 
-        # winner id equals argmax
+        #  id equals argmax
         self.assertEqual(details['penguin id'], top['id'])
-        # BMI score equals rounded top score to 3 decimals
+        # BMI equals rounded top score (3 decimals)
         self.assertEqual(details['BMI score'], round(top['score'], 3))
 
+        #  details match the base row (species/island/year)
+        idx = self.penguin.data_dict['num'].index(details['penguin id'])
+        self.assertEqual(
+            (details['species'], details['island'], details['year']),
+            (self.penguin.data_dict['species'][idx],
+             self.penguin.data_dict['island'][idx],
+            self.penguin.data_dict['year'][idx])
+        )
+
+        # example 1
+        p = Pendata("penguins.csv"); p.build_data_dict()
+        p.data_dict = {
+            'num':            [1, 2, 3],
+            'species':        ['Adelie', 'Gentoo', 'Chinstrap'],
+            'island':         ['Torg',   'Biscoe', 'Dream'],
+            'year':           [2007,     2008,     2009],
+            'bill length':    [None,     40.0,     None],
+            'bill depth':     [None,     18.0,     None],
+            'flipper length': [200,      200,      100],   # mm
+            'body mass':      [5000,     6000,     7000],  # g
+            'sex':            ['male',   'female', None],
+        }
+        d1 = p.find_winner()
+        self.assertEqual(d1['penguin id'], 3)                                 # exact id
+        self.assertEqual(d1['BMI score'], 700.0)                               # exact BMI (kg/m^2)
+        self.assertEqual((d1['species'], d1['island'], d1['year']), ('Chinstrap', 'Dream', 2009))
+        self.assertEqual((d1['bill_length_mm'], d1['bill_depth_mm']), (None, None))
+
+        # example 2
+        p1 = Pendata("penguins.csv")
+        p1.build_data_dict()
+        p1.data_dict = {
+            'num':            [101, 102, 103, 104],
+            'species':        ['A',  'B',  'C',  'D' ],
+            'island':         ['I1', 'I2', 'I3', 'I4'],
+            'year':           [2007, 2008, 2009, 2010],
+            'bill length':    [39.0, 41.0, 37.5, None],
+            'bill depth':     [18.5, 18.2, None, 17.9],
+            'flipper length': [180,  200,  150,  220],   # mm
+            'body mass':      [4500, 8000, 5000, 9000],  # g
+            'sex':            [None, None, 'male', 'female'],
+        }
+        d2 = p1.find_winner()
+        self.assertEqual(d2['penguin id'], 103)                                  # exact id
+        self.assertEqual(d2['BMI score'], 222.222)                                # 5/(0.15^2) rounded to 3 decimals
+        self.assertEqual((d2['species'], d2['island'], d2['year']), ('C', 'I3', 2009))
+        self.assertEqual((d2['bill_length_mm'], d2['bill_depth_mm']), (37.5, None))
 
 
 
 
+        # example 3 same BMI
+        p2 = Pendata("penguins.csv")
+        p2.build_data_dict()
+        p2.data_dict = {
+            'num':            [10, 11],
+            'species':        ['A', 'B'],
+            'island':         ['I1','I2'],
+            'year':           [2007,2008],
+            'bill length':    [39.0, 41.0],
+            'bill depth':     [19.0, 18.0],
+            'flipper length': [200, 200],
+            'body mass':      [4000,4000],  # both BMI = 4.0/0.2^2 = 100
+            'sex':            [None, None],
+        }
+        self.assertEqual(p2.find_winner()['penguin id'], 10)                    # stable tie → first wins
 
 
+        # example 4 invalid row
+        p3 = Pendata("penguins.csv")
+        p3.build_data_dict()
+        p3.data_dict = {
+            'num':            [1,2],
+            'species':        ['A','B'],
+            'island':         ['I1','I2'],
+            'year':           [2007,2008],
+            'bill length':    [None, None],
+            'bill depth':     [None, None],
+            'flipper length': [None, None],  
+            'body mass':      [None, None],   
+            'sex':            [None, None],
+        }
+        self.assertEqual(p3.find_winner(), {"error": "No valid penguins found"})
 
+        
 
-
-
-
+    
 
     
 
@@ -401,10 +476,10 @@ def main():
 
     groups = penguin.data_species()
     rows = penguin.ave_species_group(groups)
-    write_bill_csv(rows, 'output/penguins_bill_stats.csv')
+    write_bill_csv(rows, 'penguins_bill_stats.csv')
 
     winner_inf = penguin.find_winner()
-    winner_txt(winner_inf, 'output/winner.txt')
+    winner_txt(winner_inf, 'winner.txt')
 
 
 

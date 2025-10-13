@@ -4,7 +4,7 @@ penguin id:         40
 BMI (kg/m^2):       137.346
 species:            Adelie
 island:             Dream
-year:               NA
+year:               2007
 bill_length_mm:     39.8
 bill_depth_mm:      19.1
 flipper_length_mm:  184
