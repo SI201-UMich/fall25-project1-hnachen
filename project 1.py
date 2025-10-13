@@ -47,51 +47,51 @@ class Pendata():
 
     def build_data_dict(self):
         """
-        cleaning data
+        Cleaning data using the csv.DictReader to meet project requirements.
         """
-        for line in self.raw_data[1:]:
-            line = line.strip()
-            if not line:
-                continue
+        # The raw_data is a list of strings. We need to feed it to the csv module.
+        # csv.DictReader expects an iterable (like a file object), so we can pass self.raw_data directly.
+        # We skip the first line of raw_data because DictReader will use the header from the file itself.
+        
+        # We need to re-open the file here for the csv module to read it properly
+        with open(self.full_path, 'r', newline='', encoding='utf-8') as file_obj:
+            # Create a DictReader object. It automatically uses the first row as headers.
+            reader = csv.DictReader(file_obj)
 
-            separated = line.split(',')
-            if len(separated) < 9:
-                continue
+            # Now, loop through each row in the reader. Each 'row' is a dictionary.
+            for row in reader:
+                # The first column in penguins.csv has no name, so DictReader gives it a key of '' or None.
+                # We access it robustly.
+                num_key = next(iter(row)) # Gets the first key, whatever it is.
+                num_val = row[num_key]
+                
+                # Access data by column name, which is much clearer than by index.
+                species_val = row['species']
+                island_val = row['island']
+                year_val = row['year']
+                sex_val = row['sex']
+                bill_len_val = row['bill_length_mm']
+                bill_dep_val = row['bill_depth_mm']
+                flipper_len_val = row['flipper_length_mm']
+                body_mass_val = row['body_mass_g']
 
-
-            self.data_dict['num'].append(int(separated[0].strip(' "')))
-            self.data_dict['species'].append(separated[1].strip(' "'))
-            self.data_dict['island'].append(separated[2].strip(' "'))
-            self.data_dict['year'].append(int(separated[8].strip(' "')))
-
-            if separated[7] == 'NA':
-                self.data_dict['sex'].append(None)
-            else:
-                self.data_dict['sex'].append(separated[7])
-
-            if separated[3] == 'NA':
-                self.data_dict['bill length'].append(None)
-            else:
-                self.data_dict['bill length'].append(float(separated[3]))
-
-            if separated[4] == 'NA':
-                self.data_dict['bill depth'].append(None)
-            else:
-                self.data_dict['bill depth'].append(float(separated[4]))
-
-            if separated[5] == 'NA':
-                self.data_dict['flipper length'].append(None)
-            else:
-                self.data_dict['flipper length'].append(int(separated[5]))
-
-            if separated[6] == 'NA':
-                self.data_dict['body mass'].append(None)
-            else:
-                self.data_dict['body mass'].append(int(separated[6]))
+                # Append cleaned data to your data_dict
+                self.data_dict['num'].append(int(num_val))
+                self.data_dict['species'].append(species_val)
+                self.data_dict['island'].append(island_val)
+                self.data_dict['year'].append(int(year_val))
+                
+                # Use ternary operators for clean assignment
+                self.data_dict['sex'].append(None if sex_val == 'NA' else sex_val)
+                self.data_dict['bill length'].append(None if bill_len_val == 'NA' else float(bill_len_val))
+                self.data_dict['bill depth'].append(None if bill_dep_val == 'NA' else float(bill_dep_val))
+                self.data_dict['flipper length'].append(None if flipper_len_val == 'NA' else int(flipper_len_val))
+                self.data_dict['body mass'].append(None if body_mass_val == 'NA' else int(body_mass_val))
 
             
     
     ## Calculation 1: Bill stats by species
+    ## using "species", "bill length", "bill depth"
     def data_species(self):
         """
         Groups the data by species.
@@ -141,6 +141,7 @@ class Pendata():
     
 
     # Calculation 2: who is the strongest penguins. 
+    # using "body_mass", "flipper length", "num"
     def cal_BMI(self):
         """
         Iteration all penguins and calculate their BMI scores. 
@@ -485,8 +486,15 @@ def main():
 
 
 if __name__ == '__main__':
+    """
+    test all methods
+    """
     unittest.main(verbosity=2, exit=False)
 
+
+    """
+    generate the files.
+    """
     main()
 
 
