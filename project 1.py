@@ -42,6 +42,7 @@ class Pendata():
             'sex': [],
             'year': []
         }
+        self.rows = []
 
 
 
@@ -49,17 +50,16 @@ class Pendata():
         """
         Cleaning data using the csv.DictReader to meet project requirements.
         """
-        # We need to re-open the file here for the csv module to read it properly
+        # re-open the file here for the csv module to read it properly
         with open(self.full_path, 'r', newline='', encoding='utf-8') as file_obj:
             # Create a DictReader object.
             reader = csv.DictReader(file_obj)
 
-            # Now, loop through each row in the reader, which is a dictionary.
             for row in reader:
                 num_key = next(iter(row)) 
                 num = row[num_key]
                 
-                # Access data by column name, which is much clearer than by index.
+
                 species = row['species']
                 island = row['island']
                 year = row['year']
@@ -69,7 +69,7 @@ class Pendata():
                 flipper_len = row['flipper_length_mm']
                 body_mass = row['body_mass_g']
 
-                # Append cleaned data to your data_dict
+                # Append cleaned data 
                 self.data_dict['num'].append(int(num))
                 self.data_dict['species'].append(species)
                 self.data_dict['island'].append(island)
@@ -146,25 +146,28 @@ class Pendata():
             id = self.data_dict['num'][i]
             mass = self.data_dict['body mass'][i]
             flipper = self.data_dict['flipper length'][i]
+            year = self.data_dict['year'][i]
 
             if mass is not None and flipper is not None: 
                 mass_kg = mass / 1000
                 flipper_m = flipper / 1000
                 cur_score = mass_kg / (flipper_m * flipper_m)
 
-                scores.append({'id': id, 'score': cur_score})
+                scores.append({'id': id, 'score': cur_score, 'year': year})
         
         return scores
     
     def winner(self, score_list):
         """
         find the highest score from the list. 
+        if same older year first (smaller year wins).
         """
 
         if not score_list: 
             return {'id': -1, 'score': -1}
+        
        
-        ranked = sorted(score_list, key=lambda penguin: penguin['score'], reverse=True)
+        ranked = sorted(score_list, key=lambda penguin: (-penguin['score'], penguin['year']))
         return ranked[0]
     
     
@@ -249,7 +252,8 @@ def winner_txt(info, filename):
 
 class Testpenguins(unittest.TestCase):
     """
-    class for testing
+    class for testing 
+    some test is hard to use a sample of your chosen csv dataset, so I use some of re-reading 
     """
     def setUp(self):
         self.penguin = Pendata("penguins.csv")
@@ -279,7 +283,6 @@ class Testpenguins(unittest.TestCase):
         
 
     def test_data_species(self):
-        d = self.penguin.data_dict
         g = self.penguin.data_species()
 
         ## check in this species, where has a record with paried bill length and depth match the table
@@ -303,14 +306,15 @@ class Testpenguins(unittest.TestCase):
         # round to 3 three decimal places
         self.assertEqual(next(r for r in rows if r['species']=='Adelie')['mean bill length(mm)'], 
                          round(sum(g['Adelie']['bill length'])/len(g['Adelie']['bill length']), 3))  
+        
+        # self cases not from 
         # if 2 penguin with [48.1, 19.2], [32.3, 18], calculate the mean
         self.assertEqual(self.penguin.ave_species_group({'X': {'bill length':[48.1, 32.3], 'bill depth':[19.2, 18]}})[0], 
                          {'species':'X','mean bill length(mm)':40.2,'mean bill depth(mm)':18.6})  
         # if 3 penguin with [37.7, 17.3], [35, 18], calculate the mean
         self.assertEqual(self.penguin.ave_species_group({'X': {'bill length':[37.7, 35], 'bill depth':[17.3, 18]}})[0], 
                          {'species':'X','mean bill length(mm)':36.35,'mean bill depth(mm)':17.65})  
-        
-
+            #special case
         # if one penguin without Bill length
         self.assertEqual(self.penguin.ave_species_group({'Z': {'bill length':[], 'bill depth':[4.0, 6.0]}})[0], 
                          {'species':'Z','mean bill length(mm)':0,'mean bill depth(mm)':5.0})
@@ -352,8 +356,8 @@ class Testpenguins(unittest.TestCase):
     def test_winner(self):
     
         # check the list 
-        self.assertEqual(self.penguin.winner([{'id':1,'score':33.2},{'id':2,'score':31.2},{'id':3,'score':30}]), {'id':1,'score':33.2})
-        self.assertEqual(self.penguin.winner([{'id':1,'score':45},{'id':2,'score':43.2},{'id':3,'score':41}]), {'id':1,'score':45})
+        self.assertEqual(self.penguin.winner([{'id':1,'score':33.2,'year': 2021},{'id':2,'score':31.2,'year': 2022},{'id':3,'score':30,'year': 2011}]), {'id':1,'score':33.2,'year':2021})
+        self.assertEqual(self.penguin.winner([{'id':1,'score':45,'year':2011},{'id':2,'score':43.2,'year':2013},{'id':3,'score':41,'year':2011}]), {'id':1,'score':45,'year':2011})
         # check the ranking whether correct
         self.assertEqual(self.penguin.winner(self.penguin.cal_BMI()), max(self.penguin.cal_BMI(), key=lambda s: s['score']))
 
@@ -361,7 +365,7 @@ class Testpenguins(unittest.TestCase):
         self.assertEqual(self.penguin.winner([]), {'id':-1,'score':-1})
 
         # when scores tie, keep the first occurrence (Python's sorted is stable)
-        self.assertEqual(self.penguin.winner([{'id':10,'score':7.7},{'id':11,'score':7.7}])['id'], 10)
+        self.assertEqual(self.penguin.winner([{'id':10,'score':7.7,'year':2003},{'id':11,'score':7.7,'year':2013}])['id'], 10)
 
 
     def test_find_winner(self):
@@ -403,7 +407,6 @@ class Testpenguins(unittest.TestCase):
 
         # example 2
         p1 = Pendata("penguins.csv")
-        p1.build_data_dict()
         p1.data_dict = {
             'num':            [101, 102, 103, 104],
             'species':        ['A',  'B',  'C',  'D' ],
@@ -426,7 +429,6 @@ class Testpenguins(unittest.TestCase):
 
         # example 3 same BMI
         p2 = Pendata("penguins.csv")
-        p2.build_data_dict()
         p2.data_dict = {
             'num':            [10, 11],
             'species':        ['A', 'B'],
@@ -443,7 +445,6 @@ class Testpenguins(unittest.TestCase):
 
         # example 4 invalid row
         p3 = Pendata("penguins.csv")
-        p3.build_data_dict()
         p3.data_dict = {
             'num':            [1,2],
             'species':        ['A','B'],
