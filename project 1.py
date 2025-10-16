@@ -135,7 +135,7 @@ class Pendata():
     
 
     # Calculation 2: who is the strongest penguins. 
-    # using "body_mass", "flipper length", "num"
+    # using "body_mass", "flipper length", "num","year"
     def cal_BMI(self):
         """
         Iteration all penguins and calculate their BMI scores. 
@@ -359,7 +359,13 @@ class Testpenguins(unittest.TestCase):
         self.assertEqual(self.penguin.winner([{'id':1,'score':33.2,'year': 2021},{'id':2,'score':31.2,'year': 2022},{'id':3,'score':30,'year': 2011}]), {'id':1,'score':33.2,'year':2021})
         self.assertEqual(self.penguin.winner([{'id':1,'score':45,'year':2011},{'id':2,'score':43.2,'year':2013},{'id':3,'score':41,'year':2011}]), {'id':1,'score':45,'year':2011})
         # check the ranking whether correct
-        self.assertEqual(self.penguin.winner(self.penguin.cal_BMI()), max(self.penguin.cal_BMI(), key=lambda s: s['score']))
+        scores = self.penguin.cal_BMI()
+        if scores:
+            expected_winner = sorted(scores, key=lambda p: (-p['score'], p['year']))[0]
+            self.assertEqual(self.penguin.winner(scores), expected_winner)
+
+        
+
 
         # empty list should return the sentinel
         self.assertEqual(self.penguin.winner([]), {'id':-1,'score':-1})
@@ -370,7 +376,11 @@ class Testpenguins(unittest.TestCase):
 
     def test_find_winner(self):
         details = self.penguin.find_winner()
-        top = max(self.penguin.cal_BMI(), key=lambda s: s['score'])
+        scores = self.penguin.cal_BMI()
+        if not scores:
+            self.assertEqual(details, {"error": "No valid penguins found"})
+            return 
+        top = sorted(scores, key=lambda p: (-p['score'], p['year']))[0]
 
         #  id equals argmax
         self.assertEqual(details['penguin id'], top['id'])
